@@ -10,7 +10,10 @@ import IPython.display as ipd
 from IPython.display import display
 from IPython.display import clear_output
 from IPython.core.interactiveshell import InteractiveShell
+from pydub.effects import normalize
+import librosa
 InteractiveShell.ast_node_interactivity = "all"
+
 
 
 class Frame:
@@ -47,6 +50,11 @@ class App:
 
     def read_wav(self, filepath: str):
         self.audio_segment = AudioSegment.from_wav(filepath)
+        # Normalize the audio segment to -20 dBFS
+        # normalized_segment = normalize(self.audio_segment).get_array_of_samples()
+
+        # # Get the samples as an array of signed 16-bit integers
+        # samples = normalized_segment
         self.samples = self.audio_segment.get_array_of_samples()
         self.frame_rate = self.audio_segment.frame_rate
 
@@ -77,6 +85,30 @@ class App:
         zcr = count / len(frame.samples)
         return zcr
     
+    @staticmethod
+    def F0_Cor(frame: Frame, lag=5):
+        s = 0
+        for i in range(len(frame.samples) - lag):
+            s = s + frame.samples[i] * frame.samples[i + lag]
+        return s
+
+    @staticmethod
+    def F0_AMDF(frame: Frame, lag=5):
+        s = 0
+        for i in range(len(frame.samples) - lag):
+            s = s + abs(frame.samples[i] - frame.samples[i + lag])
+        return s
+    
+    @staticmethod
+    def SR(frame: Frame, threshold=-60):
+        ## TODO with volume  ZCR // 2 thresholds
+
+        samples = np.asarray(frame.samples, dtype="int64")
+        dbfs = librosa.amplitude_to_db(samples, ref=np.max)
+        num_silent_samples = np.sum(dbfs < threshold)
+        sr = num_silent_samples / len(frame.samples)
+        return sr
+
 
     @staticmethod
     def LSTER(frame: Frame):
@@ -103,6 +135,32 @@ class App:
         # Compute the LSTER value
         lster = np.sum(band_energy[1:]) / np.sum(band_energy)
         return lster
+    
+
+    #staticmethod
+    def VSTD(self, frames):
+        Volumes = [self.volume(item) for item in frames]
+        return np.std(Volumes)/max(Volumes)
+
+    #staticmethod
+    def VDR(self, frames):
+        Volumes = [self.volume(item) for item in frames]
+        return (max(Volumes)-min(Volumes))/max(Volumes)
+
+
+    @staticmethod
+    def ZSTD(self, frames):
+        zcr = [self.ZCR(item) for item in frames]
+        return np.std(zcr)
+
+    @staticmethod
+    def HZCRR(self, samples, frames):
+        avgZCR = sum([self.ZCR(item) for item in frames])/len(frames)
+        s = 0
+        for i in range(len(frames)):
+            s = s + np.sign(0.5*avgZCR-self.ZCR(frames[i]))+1
+        hzcrr = 1/(2*len(frames))*s
+        return hzcrr
        
     def plot_sample(self):
         fig = px.line(self.samples, template="plotly_white")
@@ -117,7 +175,7 @@ class App:
         fig.update_traces(line_color="#16733e")
         return fig
         
-    def plot_frame_level_feature(self, frame_level_func,
+    def plot_frame_level_feature(self, frame_level_func, frame_level_func_name,
                                 frame_duration_miliseconds: int = 10,
                                 min_val: float = None, max_val: float = None):
         
@@ -129,7 +187,8 @@ class App:
 
         # Add line trace
         fig.add_trace(
-            go.Scatter(x=x, y=y, mode='lines', line=dict(color="#16733e"), showlegend=False)
+            go.Scatter(x=x, y=y, mode='lines', line=dict(color="#16733e"),
+                        showlegend=False)
         )
 
         # Color regions between min_val and max_val
@@ -147,10 +206,13 @@ class App:
             yaxis_title="Value",
             xaxis_title="Time [s]",
             hovermode=False,
-            template="plotly_white"
+            template="plotly_white",
+            title = frame_level_func_name
         )
 
         return fig
+    
+
     
     def get_frames_between_values(self, frame_level_func, min_val, max_val):
         return [frame for frame in self.frames if min_val <= frame_level_func(frame) <= max_val]
@@ -159,33 +221,37 @@ class App:
     def display_frames(self, frames):
         samples_to_display = np.concatenate([frame.samples for frame in frames])
         audio = Audio(data=samples_to_display, rate=self.frame_rate)
-        IPython.display.display(audio)
+        return audio.data
 
-    # def display_frames_between_values(self, frame_level_func, min_val, max_val):
-    #     frames_to_display = self.get_frames_between_values(frame_level_func, min_val, max_val)
-    #     self.display_frames(frames_to_display)
+    def display_frames_between_values(self, frame_level_func, min_val, max_val):
+        frames_to_display = self.get_frames_between_values(frame_level_func, min_val, max_val)
+        audio_data = self.display_frames(frames_to_display)
+        return audio_data
+        
     
-    def display_frames_between_values(self, frame_level_func, min_val=0,
-                                      max_val=10**9, step=10**4):
-        def update_display(min_max_val):
-            min_val, max_val = min_max_val
-            frames_to_display = self.get_frames_between_values(frame_level_func, min_val, max_val)
-            if len(frames_to_display) == 0:
-                print("Za mały zakres")
-            else:
-                self.display_frames(frames_to_display)
+    # def display_frames_between_values(self, frame_level_func, min_val=0,
+    #                                   max_val=10**9, step=10**4):
+    #     def update_display(min_max_val):
+    #         min_val, max_val = min_max_val
+    #         frames_to_display = self.get_frames_between_values(frame_level_func, min_val, max_val)
+    #         if len(frames_to_display) == 0:
+    #             print("Za mały zakres")
+    #         else:
+    #             self.display_frames(frames_to_display)
 
-        # slider_label = widgets.Label(value='Range:', layout=widgets.Layout(width='200px'))
-        slider = widgets.FloatRangeSlider(value=[min_val, max_val], min=0, max=max_val, step=step,
-                                          description='', readout_format='.2f',
-                                        layout=widgets.Layout(width='80%'),
-                                        readout_style='width:50%;')
+    #     # slider_label = widgets.Label(value='Range:', layout=widgets.Layout(width='200px'))
+    #     slider = widgets.FloatRangeSlider(value=[min_val, max_val], min=0, max=max_val, step=step,
+    #                                       description='', readout_format='.2f',
+    #                                     layout=widgets.Layout(width='80%'),
+    #                                     readout_style='width:50%;')
 
 
 
-        widgets.interact(update_display, min_max_val=slider)
+    #     widgets.interact(update_display, min_max_val=slider)*,
 
-    def plot_frame_level_feature_analyse(self, frame_level_func, frame_duration_miliseconds=10, min_val=None, max_val=None):
+    def plot_frame_level_feature_analyse(self, frame_level_func,
+                                          frame_duration_miliseconds=10,
+                                            min_val=None, max_val=None):
         frames = [frame for frame in self.frame_generator(frame_duration_miliseconds)]
         x = [frame.timestamp for frame in frames]
         y = [frame_level_func(frame) for frame in frames]
@@ -232,3 +298,4 @@ class App:
         # Create an output widget to display the plot
         out = widgets.Output()
         display(min_val_input, max_val_input, out)
+
