@@ -1,149 +1,118 @@
-import streamlit as st
-import pandas as pd
-import numpy as np
 import os
-
-from IPython.display import clear_output
-from IPython.core.interactiveshell import InteractiveShell
-InteractiveShell.ast_node_interactivity = "all"
-import matplotlib.pyplot as pltz
-import datetime
+import streamlit as st
 import numpy as np
 import pandas as pd
-
-import plotly.graph_objects as go
-from ipywidgets import widgets
-from IPython.display import clear_output
-from IPython.core.interactiveshell import InteractiveShell
-InteractiveShell.ast_node_interactivity = "all"
-import matplotlib.pyplot as pltz
-import plotly.io as pio
-pio.renderers.default = 'notebook'
-from pydub import AudioSegment
-import plotly.express as px
-import numpy as np
 from modules.app import App, Frame
-import plotly.express as px
-import librosa
 
 
-# Define the function for analysis
-def analyze_data(data):
-    if data is not None:
-        # Perform analysis on the data here
-        return "Analysis complete!"
-
-# Define the Streamlit app
 def main():
-    # Set up the menu with file selector
-    st.set_page_config(page_title="Data Analysis", layout="wide")
+    ## page config
+    st.set_page_config(page_title="AiPD projekt 1", layout="wide")
+
+    ## sidebar
+
+    # select file
     directory = "./samples/Nagrania_01/2_02/Znormalizowane/"
     file_list = os.listdir(directory)
-    file_name = st.sidebar.selectbox("Select a file", file_list)
+    st.sidebar.header("Wybierz plik")
+    file_name = st.sidebar.selectbox("file_selectbox", file_list, label_visibility="collapsed")
 
-    # Define the tabs
-    tabs = ["Analyze Data on frame level", "Analyze Data on clip level", 
-            "Download parameters", "About"]
-    clicked_tab = st.sidebar.radio("Select a tab", tabs)
     file_path = os.path.join(directory, file_name)
     app = App(file_path)
 
-    if clicked_tab == "Analyze Data on frame level":
+    # audio
+    st.sidebar.audio(app.samples, sample_rate=app.frame_rate)
 
-        file_path = os.path.join(directory, file_name)
-        clicked_tab = st.radio("Analiza", ["Cisza", "Fragmenty bezdźwięczne", "Muzyka"])
+    # tabs
+    tabs = [
+        "Przebieg czasowy pliku audio",
+        "Cechy na poziomie ramki",
+        "Detekcja ciszy",
+        "Analiza na poziomie klipu", 
+        "Pobieranie parametrów", 
+        "Informacje"
+    ]
+    selected_tab = st.sidebar.radio("tab_radio", tabs, label_visibility="collapsed")
 
-        frame_duration = st.slider("Select frame duration (in milliseconds)", min_value=1, max_value=25, value=5)
+    ## tabs
+    
+    if selected_tab == "Przebieg czasowy pliku audio":
+        st.header("Przebieg czasowy pliku audio")
+        plot_sample = app.plot_sample() 
+        st.plotly_chart(plot_sample)
+
+
+    if selected_tab == "Cechy na poziomie ramki":
+        st.header("Cechy sygnału audio na poziomie ramki")
+
+        frame_duration = st.slider("Długość ramki (w milisekundach):", min_value=10, max_value=40, value=25, step=5)
         
+        st.subheader("Wykresy")
 
-        col1, col2 = st.columns(2)
-        with col1:
-            col11, col12 = st.columns(2)
-            with col11:
-                min_val_volume = st.number_input(key="Minimum Value Volume", label="Min", min_value=0, max_value = 10**4, value = 0, step= 1)
-            with col12:
-                max_val_volume = st.number_input(key="Maximum Value Volume", label="Max", min_value=0, max_value= 10**4, value = 0, step= 1)
-            
-            plot_volume = app.plot_frame_level_feature(app.volume, "VOLUME", frame_duration_miliseconds = frame_duration,
-                                            min_val =  min_val_volume, max_val= max_val_volume) 
-            st.plotly_chart(plot_volume)
+        # volume
+        plot_volume = app.plot_frame_level_feature(
+            frame_level_func=app.volume, 
+            plot_title="VOLUME", 
+            frame_duration_miliseconds=frame_duration,
+        ) 
+        st.plotly_chart(plot_volume)
 
-            col13, col14 = st.columns(2)
-            with col13:
-                min_val_ste = st.number_input(label="Min", min_value=0, max_value = 10**4, value = 0, step= 1)
-            with col14:
-                max_val_ste= st.number_input(label="Max", min_value=0, max_value= 10**4, value = 0, step= 1)
-            
-            plot_ste = app.plot_frame_level_feature(app.STE, "STE", frame_duration_miliseconds = frame_duration,
-                                            min_val =  min_val_ste, max_val= max_val_ste) 
-            st.plotly_chart(plot_ste)
+        # ste
+        plot_ste = app.plot_frame_level_feature(
+            frame_level_func=app.STE, 
+            plot_title="STE", 
+            frame_duration_miliseconds=frame_duration,
+        ) 
+        st.plotly_chart(plot_ste)
 
+        # F0 corr
+        plot_f0_cor = app.plot_frame_level_feature(
+            frame_level_func=app.F0_Cor, 
+            plot_title="F0 Corr", 
+            frame_duration_miliseconds=frame_duration,
+        ) 
+        st.plotly_chart(plot_f0_cor)
 
-            col15, col16 = st.columns(2)
-            with col15:
-                min_val_f0_cor = st.number_input(label="Min", min_value=-5, max_value = 10**4, value = 0, step= 1)
-            with col16:
-                max_val_f0_cor = st.number_input(label="Max", min_value=-5, max_value= 10**4, value = 0, step= 1)
-            
-            plot_f0_cor = app.plot_frame_level_feature(app.F0_Cor, "F0_Cor", frame_duration_miliseconds = frame_duration,
-                                            min_val =  min_val_f0_cor, max_val= max_val_f0_cor) 
-            st.plotly_chart(plot_f0_cor)
-
-
-            with col2:
-                col21, col22 = st.columns(2)
-                with col21:
-                    min_val_zcr= st.number_input(label="Min", min_value=-1, max_value = 10**4, value = 0, step= 1)
-                with col22:
-                    max_val_zcr= st.number_input(label="Max", min_value=-1, max_value= 10**4, value = 0, step= 1)
+        # F0 MADF     
+        plot_f0_amdf = app.plot_frame_level_feature(
+            frame_level_func=app.F0_AMDF, 
+            plot_title="F0 AMDF", 
+            frame_duration_miliseconds=frame_duration,
+        ) 
+        st.plotly_chart(plot_f0_amdf)
                 
-                plot_zcr= app.plot_frame_level_feature(app.ZCR, "ZCR", frame_duration_miliseconds = frame_duration,
-                                                min_val =  min_val_zcr, max_val= max_val_zcr) 
-                st.plotly_chart(plot_zcr)
+        ## Download data
+        st.subheader("Zapis parametrów")
+        frame_level_data = app.get_frame_level_export_data(frame_duration_miliseconds=frame_duration)        
+        st.download_button(
+            label="Pobierz parametry (.csv)",
+            data=frame_level_data.to_csv(),
+            file_name=f"{file_name.split('.')[0]}_frame_{frame_duration}.csv",
+            mime="text/csv",
+        )
 
+        ## Define a dropdown to allow the user to select the frame-level function
+        st.subheader("Odsłuchaj ramki z nagrania spełniające warunek")
 
-                col23, col24 = st.columns(2)
-                with col23:
-                    min_val_st= st.number_input(label="Min", min_value=-2, max_value = 10**4, value = 0, step= 1)
-                with col24:
-                    max_val_st= st.number_input(label="Max", min_value=-3, max_value= 10**4, value = 0, step= 1)
-                
-                plot_sr = app.plot_frame_level_feature(app.SR, "SR", frame_duration_miliseconds = frame_duration,
-                                                min_val =  min_val_st, max_val= max_val_st) 
-                st.plotly_chart(plot_sr)
-
-
-                col25, col26 = st.columns(2)
-                with col25:
-                    min_val_f0_amdf = st.number_input(label="Min", min_value=-6, max_value = 10**4, value = 0, step= 1)
-                with col26:
-                    max_val_f0_amdf= st.number_input(label="Max", min_value=-6, max_value= 10**4, value = 0, step= 1)
-                
-                plot_f0_amdf = app.plot_frame_level_feature(app.F0_AMDF, "F0_Cor", frame_duration_miliseconds = frame_duration,
-                                                min_val =  min_val_f0_amdf, max_val= max_val_f0_amdf) 
-                st.plotly_chart(plot_f0_amdf)
-
-
-
-            
-                    
-        # Define a dropdown to allow the user to select the frame-level function
-        frame_funcs = {"Volume": app.volume,
-                       'Short-Time Energy': app.STE,
-                         "Zero Crossing Rate": app.ZCR,
-                         "Silten ratio": app.SR}
-        frame_level_func_name = st.selectbox("Frame-Level Function", list(frame_funcs.keys()))
+        frame_funcs = {
+            "Volume": app.volume,
+            "Short-Time Energy": app.STE,
+            "Zero Crossing Rate": app.ZCR,
+            "Silent ratio": app.SR
+        }
+        frame_level_func_name = st.selectbox("Wybierz cechę na poziomie ramki:", list(frame_funcs.keys()))
         frame_level_func = frame_funcs[frame_level_func_name]
+        frames, func_values, upper_bound = app.get_frame_level_func_range(frame_level_func, frame_duration)
 
-        # Display the frames between the minimum and maximum values
-        min_val, max_val = st.slider("Select a range of values", 0, 32767, (5000, 10000))
+        (min_val), max_val = st.slider("Wybierz zakres wartości:", 0.0, upper_bound, (0.0, upper_bound), upper_bound / 50)
         try:
-            audio_data = app.display_frames_between_values(frame_level_func, min_val, max_val)
-            st.audio(audio_data, format='audio/wav') 
+            samples = app.display_frames_signal_between_values(frames, func_values, min_val, max_val)
+            st.audio(samples, format='audio/wav', sample_rate=app.frame_rate) 
         except:
-            st.write("No frames found between the specified values.")
+            st.write("Brak ramek pomiędzy zadanymi poziomami :confused:")
 
-    if clicked_tab == "Analyze Data on clip level":
+
+    if selected_tab == "Analiza na poziomie klipu":
         # nie działa
         
         # Create empty dataframe
@@ -158,8 +127,6 @@ def main():
             row = {'Filename': file_name,  'VSTD': sum(vstds)/len(vstds)}
             df.loc[len(df)+1] = row
 
-
-        print(df)
         # Streamlit apps
         st.title('Audio Feature Analysis')
         file_name = st.selectbox("Select a file 2", file_list)
@@ -172,9 +139,7 @@ def main():
             st.write('TODO: Add scatter plots for LSTER and VSTD')
 
 
-
-
-    if clicked_tab == "Download parameters":
+    if selected_tab == "Pobieranie parametrów":
 
         # Define the column names for the table
         col1 = "Frame-Level Function"
@@ -189,40 +154,14 @@ def main():
         # Create the table
         table = st.experimental_data_editor(data, num_rows="dynamic")
 
-
         # Define a button to export the table to Excel
         if st.button("Export to Excel"):
             data.to_excel("table.xlsx", index=False)
 
 
-
-        frame_funcs = {"Volume": app.volume,
-                       'Short-Time Energy': app.STE,
-                         "Zero Crossing Rate": app.ZCR}
-        frame_level_func_name = st.selectbox("Frame-Level Function", list(frame_funcs.keys()))
-        frame_level_func = frame_funcs[frame_level_func_name]
-
-        frame_duration = st.slider("Select frame duration (in milliseconds)", min_value=1, max_value=25, value=5)
-        frames = [frame for frame in app.frame_generator(frame_duration)]
-
-        y = [frame_level_func(frame) for frame in frames]
-        # Add a button to save the frame-level function values to a CSV file
-        if st.button("Save to CSV"):
-            audio_name = app.filepath.split("/")[-1].split(".")[0]
-            filename = f"{audio_name}_{frame_level_func_name}_{frame_duration}ms.csv"
-            df = pd.DataFrame({"Frame": range(len(y)), frame_level_func_name: y})
-            df.to_csv(filename, index=False)
-            st.success(f"File saved to {filename}")
-
-
-    if clicked_tab == "About":
-        # Display information about the app
+    if selected_tab == "Informacje":
         st.write("This app allows you to select a file from a directory, view the data, and perform analysis on it.")
-    
-    
-    
 
 
-# Run the app
 if __name__ == "__main__":
     main()

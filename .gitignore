@@ -1,2 +1,5 @@
 __pycache__
 Dźwięk_projekt_1.ipynb
+*.csv
+*.xlsx
+.ipynb_checkpoints
