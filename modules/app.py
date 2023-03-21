@@ -87,16 +87,12 @@ class App:
         for i in range(len(frame.samples) - lag):
             s = s + abs(frame.samples[i] - frame.samples[i + lag])
         return s
-    
+   
     @staticmethod
-    def SR(frame: Frame, threshold=-60):
-        ## TODO with volume  ZCR // 2 thresholds
-
-        samples = np.asarray(frame.samples, dtype="int64")
-        dbfs = librosa.amplitude_to_db(samples, ref=np.max)
-        num_silent_samples = np.sum(dbfs < threshold)
-        sr = num_silent_samples / len(frame.samples)
-        return sr
+    def SR(frame: Frame, vol_min_value=0.0, vol_max_value=0.05, zcr_min_value=0.5, zcr_max_value=2):
+        volume = App.volume(frame)
+        zcr = App.ZCR(frame)
+        return vol_min_value <= volume <= vol_max_value and zcr_min_value <= zcr <= zcr_max_value
 
     @staticmethod
     def LSTER(frame: Frame):
@@ -159,9 +155,39 @@ class App:
             },
             yaxis=self._YAXIS_PARAMS,
             yaxis_title="Amplitude",
-            **self._DEFAULT_PARAMS      
+            yaxis_range=[-1.05, 1.05],
+            **self._DEFAULT_PARAMS,
         )
         fig.update_traces(line_color="#16733e")
+        return fig
+    
+    def plot_sample_with_SR(
+            self, 
+            frame_duration_miliseconds: int = 10, 
+            vol_min_value=0.0, 
+            vol_max_value=0.05, 
+            zcr_min_value=0.5, 
+            zcr_max_value=2
+        ):
+        fig = self.plot_sample()
+        frames = [frame for frame in self.frame_generator(frame_duration_miliseconds)]
+        sr_list = [
+            self.SR(frame, vol_min_value, vol_max_value, zcr_min_value, zcr_max_value) 
+                for frame in self.frame_generator(frame_duration_miliseconds)]
+        idx = 0
+        for frame, sr in zip(frames, sr_list):
+            if sr:
+                fig.add_shape(
+                    type="rect", 
+                    x0=idx,
+                    x1=idx + len(frame.samples),
+                    y0=-1,
+                    y1=1,
+                    fillcolor="#e63946", 
+                    opacity=0.2,
+                )
+            idx += len(frame.samples)
+
         return fig
         
     def plot_frame_level_feature(
@@ -170,7 +196,8 @@ class App:
             plot_title: str,
             frame_duration_miliseconds: int = 10,
             min_val: float = None, 
-            max_val: float = None
+            max_val: float = None,
+            fig_layout_kwargs={}
         ):
         
         frames = [frame for frame in self.frame_generator(frame_duration_miliseconds)]
@@ -197,11 +224,14 @@ class App:
         fig.update_layout(
             xaxis=self._XAXIS_PARAMS,
             yaxis=self._YAXIS_PARAMS,
-            yaxis_title="Value",
+            yaxis_title=None,
             title=plot_title,
-            title_x=0.1,
+            title_x=0.05,
             title_y=0.95,
-            **self._DEFAULT_PARAMS
+            **{
+                **self._DEFAULT_PARAMS,
+                **fig_layout_kwargs
+            }
         )
 
         return fig
