@@ -40,14 +40,14 @@ class App:
         "showlegend": False,
     }
 
-    def __init__(self, filepath: str, frame_duration_miliseconds: int = 5, normalize=True):
-        self.read_wav(filepath, normalize=normalize)
+    def __init__(self, filepath_or_bytes, frame_duration_miliseconds: int = 5, normalize=True):
+        self.read_wav(filepath_or_bytes, normalize=normalize)
         self.frame_duration_miliseconds = frame_duration_miliseconds
         self.frames = [frame for frame in self.frame_generator(frame_duration_miliseconds)]
-        self.filepath = filepath
+        self.filepath_or_bytes = filepath_or_bytes
 
-    def read_wav(self, filepath: str, normalize=True):
-        self.audio_segment = AudioSegment.from_wav(filepath)
+    def read_wav(self, filepath_or_bytes, normalize=True):
+        self.audio_segment = AudioSegment.from_wav(filepath_or_bytes)
         self.frame_rate = self.audio_segment.frame_rate
         self.samples = np.asarray(self.audio_segment.get_array_of_samples(), dtype=float)
         if normalize:
@@ -626,9 +626,6 @@ class App:
         for name, func in frame_funcs.items():
             records[name] = func(frames)
         return pd.DataFrame([records], index=[0]).round(4)
-
-    
-    
     
     def get_frame_level_func_range(self, frame_level_func, frame_duration_miliseconds):
         frames = [frame for frame in self.frame_generator(frame_duration_miliseconds)]

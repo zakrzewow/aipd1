@@ -11,13 +11,24 @@ def main():
     ## sidebar
 
     # select file
-    directory = "./samples/Nagrania_01/2_02/Znormalizowane/"
-    file_list = os.listdir(directory)
-    st.sidebar.header("Wybierz plik")
-    file_name = st.sidebar.selectbox("file_selectbox", file_list, label_visibility="collapsed")
+    st.sidebar.subheader("Wgraj własny plik .wav")
+    uploaded_file = st.sidebar.file_uploader("file_selectbox", "wav", label_visibility="collapsed")
+    
+    st.sidebar.header("LUB")
+    st.sidebar.subheader("Wybierz głos")
+    users = ["Kacper", "Grzegorz", "głos kobiecy"]
+    user = st.sidebar.selectbox("user_selectbox", users, label_visibility="collapsed", disabled=uploaded_file is not None)
 
-    file_path = os.path.join(directory, file_name)
-    app = App(file_path)
+    directory = f"./samples/{user}/Znormalizowane/"
+    file_list = os.listdir(directory)
+    st.sidebar.subheader("Wybierz plik")
+    file_name = st.sidebar.selectbox("file_selectbox", file_list, label_visibility="collapsed", disabled=uploaded_file is not None)
+
+    if uploaded_file is None:
+        file_path = os.path.join(directory, file_name)
+        app = App(file_path)
+    else:
+        app = App(uploaded_file)
 
     # audio
     st.sidebar.audio(app.samples, sample_rate=app.frame_rate)
@@ -106,7 +117,6 @@ def main():
         ) 
         st.plotly_chart(plot_autocorr)
 
-
         # RMS
         plot_rms = app.plot_frame_level_feature(
             frame_level_func=app.RMS, 
@@ -122,7 +132,6 @@ def main():
         plot_spectral_contrast_std = app.plot_spectral_contrast_std(spectral_contrast_std_values)
         st.plotly_chart(plot_spectral_contrast_std)
         
-
         ## Download data
         st.subheader("Zapis parametrów")
         frame_level_data = app.get_frame_level_export_data(frame_duration_miliseconds=frame_duration)        
@@ -140,7 +149,6 @@ def main():
             "Volume": app.volume,
             "Short-Time Energy": app.STE,
             "Zero Crossing Rate": app.ZCR,
-            "Silent ratio": app.SR,
             "Autocorrelation": app.autocorrelation
         }
         frame_level_func_name = st.selectbox("Wybierz cechę na poziomie ramki:", list(frame_funcs.keys()))
@@ -275,7 +283,7 @@ def main():
             ) 
             st.plotly_chart(plot_zcr)
 
-        st.subheader("Zaznaczenie ciszy na wykresie")
+        st.subheader("Zaznaczenie fragmentów dźwiecznych i bezdźwięcznych na wykresie")
         plot_sample_with_sr = app.plot_sample_with_SR(frame_duration, ste_min_val, ste_max_val, zcr_min_val, zcr_max_val) 
         st.plotly_chart(plot_sample_with_sr)
 
