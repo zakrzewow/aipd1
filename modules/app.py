@@ -3,9 +3,8 @@ import numpy as np
 import pandas as pd
 import plotly.express as px
 import plotly.graph_objs as go
-from typing import Callable, List
+from typing import Callable, List, Tuple
 from pydub import AudioSegment
-from typing import List, Tuple, Callable
 
 
 class Frame:
