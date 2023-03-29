@@ -6,6 +6,7 @@ import plotly.graph_objs as go
 from typing import Callable, List
 from pydub import AudioSegment
 from typing import List, Tuple, Callable
+from pydub.utils import make_chunks
 
 
 class Frame:
@@ -53,6 +54,7 @@ class App:
         if normalize:
             self.samples = self.samples / np.abs(self.samples).max()
 
+
     def frame_generator(self, frame_duration_miliseconds=10):
         n = int(self.frame_rate * frame_duration_miliseconds / 1000)
         offset = 0
@@ -62,6 +64,7 @@ class App:
             yield Frame(self.samples[offset:offset + n], timestamp, duration)
             timestamp += duration
             offset += n
+
 
     @staticmethod
     def volume(frame: Frame):
@@ -178,6 +181,63 @@ class App:
         lster = low_ste_count / total_frames
         return lster
     
+
+    def chunk_frame_generator(self, chunk: AudioSegment, frame_duration_miliseconds=10):
+        frame_rate = chunk.frame_rate
+        samples = np.asarray(chunk.get_array_of_samples(), dtype=float)
+        samples = samples / np.abs(samples).max()
+        n = int(frame_rate * frame_duration_miliseconds / 1000)
+        offset = 0
+        timestamp = 0.0
+        duration = n / frame_rate
+        for offset in range(0, len(samples), n):
+            yield Frame(samples[offset:offset + n], timestamp, duration)
+            timestamp += duration
+            offset += n
+
+    def proper_LSTER(self):
+        chunk_length_ms = 1000
+        chunks = make_chunks(self.audio_segment, chunk_length_ms)
+        
+        total_duration_ms = len(self.audio_segment)
+        frame_duration_miliseconds = 25
+
+        lster_list = []
+        for index, chunk in enumerate(chunks):
+            frames = [frame for frame in self.chunk_frame_generator(chunk, frame_duration_miliseconds)]
+
+            print(f"Chunk {index + 1}/{len(chunks)}: {len(frames)} frames")
+
+            if len(frames) > 0:
+                lster_value = App.LSTER(frames)
+                print(f"LSTER value for chunk {index + 1}: {lster_value}")
+                lster_list.append(lster_value)
+
+        return lster_list
+
+    def plot_proper_music_metric(self, lster_list: List[float], plot_title: str):
+        x = list(range(len(lster_list)))
+        y = lster_list
+
+        fig = go.Figure()
+
+        # Add line trace
+        fig.add_trace(
+            go.Scatter(x=x, y=y, mode='lines', line=dict(color="#16733e"),
+                        showlegend=False)
+        )
+
+        fig.update_layout(
+            xaxis_title="Chunk index",
+            yaxis_title=plot_title,
+            title=plot_title,
+            title_x=0.05,
+            title_y=0.95,
+        )
+
+        return fig
+    
+
     @staticmethod
     def energy_entropy(frames: List[Frame], K: int = 10) -> float:
         """
@@ -315,7 +375,7 @@ class App:
 
 
     @staticmethod
-    def spectral_contrast(frame: Frame, sampling_rate: int, n_bands: int = 6) -> np.ndarray:
+    def spectral_contrast(frame: Frame, sampling_rate: int, n_bands: int = 4) -> np.ndarray:
         # Calculate the FFT and magnitude spectrum
         fft = np.fft.fft(frame.samples)
         magnitude_spectrum = np.abs(fft)[: len(fft) // 2]
@@ -327,6 +387,8 @@ class App:
 
         # Compute the spectral contrast for each subband
         spectral_contrast = []
+        
+
         for band in subbands:
             max_val = np.max(magnitude_spectrum[band])
             min_val = np.min(magnitude_spectrum[band])
@@ -394,7 +456,6 @@ class App:
         return np.std(spectral_bandwidths)
 
 
-       
     def plot_sample(self):
         fig = px.line(self.samples, template="plotly_white")
         fig.update_layout(
@@ -493,8 +554,6 @@ class App:
         frame_numbers: List[int],
         plot_title: str,
         frame_duration_miliseconds: int = 10,
-        min_val: float = None,
-        max_val: float = None,
         fig_layout_kwargs={},
     ):
 
@@ -639,3 +698,36 @@ class App:
     
     def __frames_to_samples(self, frames: List[Frame]) -> np.array:
         return np.concatenate([frame.samples for frame in frames])
+
+
+    def plot_music_vs_talks(self, lster_list: List[float],
+                        threshold_lster: float,
+                        plot_title: str):
+        music_x, music_y = [], []
+        talks_x, talks_y = [], []
+        
+        for i in range(len(lster_list)):
+            if lster_list[i] <= threshold_lster:
+                music_x.append(i)
+                music_y.append(1)
+                talks_x.append(i)
+                talks_y.append(0)
+            else:
+                music_x.append(i)
+                music_y.append(0)
+                talks_x.append(i)
+                talks_y.append(1)
+        
+        fig = go.Figure()
+
+        fig.add_trace(go.Scatter(x=music_x, y=music_y, mode='lines', line=dict(color="#16733e"), name='Muzyka'))
+        fig.add_trace(go.Scatter(x=talks_x, y=talks_y, mode='lines', line=dict(color="#ffbe0b"), name='mowa'))
+
+        fig.update_layout(
+            xaxis_title="Segment dźwięku",
+            yaxis_title="LSTER",
+            title=plot_title,
+            yaxis_range=[0, 1]
+        )
+
+        return fig
