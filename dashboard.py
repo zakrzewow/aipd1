@@ -155,7 +155,7 @@ def main():
         frame_level_func = frame_funcs[frame_level_func_name]
         frames, func_values, upper_bound = app.get_frame_level_func_range(frame_level_func, frame_duration)
 
-        (min_val), max_val = st.slider(key = "slider_page_2",
+        min_val, max_val = st.slider(key = "slider_page_2",
                                         label =   "Wybierz zakres wartości:",
                                         min_value = 0.0, max_value = upper_bound,
                                         value = (0.0, upper_bound),
@@ -165,6 +165,7 @@ def main():
             st.audio(samples, format='audio/wav', sample_rate=app.frame_rate) 
         except:
             st.write("Brak ramek pomiędzy zadanymi poziomami :confused:")
+
 
     if selected_tab == "Detekcja ciszy":
         st.header("Detekcja ciszy")
@@ -291,7 +292,6 @@ def main():
     if selected_tab == "Analiza na poziomie klipu":
         st.header("Analiza na poziomie klipu")
 
-
         vstd = app.VSTD(app.frames)
         vdr = app.VDR(app.frames)
         vu = app.VU(app.frames)
@@ -341,8 +341,8 @@ def main():
         )
 
 
-
     if selected_tab == "Pobieranie markerów określających granice":
+        st.header("Analiza na poziomie klipu")
 
         # Define the column names for the table
         col1 = "Frame-Level Function"
@@ -365,9 +365,12 @@ def main():
         # Create the table
         table = st.experimental_data_editor(data, num_rows="dynamic")
 
-        # Define a button to export the table to Excel
-        if st.button("Export to Excel"):
-            data.to_excel("table.xlsx", index=False)
+        st.download_button(
+            label="Pobierz (.csv)",
+            data=table.to_csv(),
+            file_name=f"table.csv",
+            mime="text/csv",
+        )
 
     if selected_tab == "Informacje":
         st.write("This app allows you to select a file from a directory, view the data, and perform analysis on it.")
