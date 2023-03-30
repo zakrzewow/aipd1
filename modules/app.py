@@ -31,7 +31,7 @@ class App:
     _YAXIS_PARAMS = {
         "linecolor": "black",
         "gridcolor": "#c4cfc9",
-        "mirror": True,
+        "showline": False,
         "ticks": "outside",
     }
     _DEFAULT_PARAMS = {
@@ -206,11 +206,8 @@ class App:
         for index, chunk in enumerate(chunks):
             frames = [frame for frame in self.chunk_frame_generator(chunk, frame_duration_miliseconds)]
 
-            print(f"Chunk {index + 1}/{len(chunks)}: {len(frames)} frames")
-
             if len(frames) > 0:
                 lster_value = App.LSTER(frames)
-                print(f"LSTER value for chunk {index + 1}: {lster_value}")
                 lster_list.append(lster_value)
 
         return lster_list
@@ -736,7 +733,7 @@ class App:
         
         fig = go.Figure()
 
-        fig.add_trace(go.Scatter(x=music_x, y=music_y, mode='lines', line=dict(color="#16733e"), name='Muzyka'))
+        fig.add_trace(go.Scatter(x=music_x, y=music_y, mode='lines', line=dict(color="#16733e"), name='muzyka'))
         fig.add_trace(go.Scatter(x=talks_x, y=talks_y, mode='lines', line=dict(color="#ffbe0b"), name='mowa'))
 
         fig.update_layout(

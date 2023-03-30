@@ -281,7 +281,7 @@ def main():
             ) 
             st.plotly_chart(plot_zcr)
 
-        st.subheader("Zaznaczenie fragmentów dźwiecznych i bezdźwięcznych na wykresie")
+        st.subheader("Zaznaczenie fragmentów bezdźwięcznych na wykresie")
         plot_sample_with_sr = app.plot_sample_with_SR(frame_duration, ste_min_val, ste_max_val, zcr_min_val, zcr_max_val) 
         st.plotly_chart(plot_sample_with_sr)
 
@@ -407,7 +407,7 @@ def main():
         )
 
     if selected_tab == "Informacje":
-        st.write("This app allows you to select a file from a directory, view the data, and perform analysis on it.")
+        st.write("Ta aplikacja umożliwia wybór pliku *.wav (z przykładów lub wgranie własnego), przegląd metryk oraz przeprowadzenie analizy.")
 
 
 if __name__ == "__main__":
