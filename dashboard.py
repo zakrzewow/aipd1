@@ -185,7 +185,7 @@ def main():
                 frame_duration_miliseconds=frame_duration,
                 min_val=vol_min_val,
                 max_val=vol_max_val,
-                fig_layout_kwargs=dict(width=400, height=300)
+                fig_layout_kwargs=dict(width=500, height=300)
             ) 
             st.plotly_chart(plot_volume)
 
@@ -201,7 +201,7 @@ def main():
                 frame_duration_miliseconds=frame_duration,
                 min_val=zcr_min_val,
                 max_val=zcr_max_val,
-                fig_layout_kwargs=dict(width=400, height=300)
+                fig_layout_kwargs=dict(width=500, height=300)
             ) 
             st.plotly_chart(plot_zcr)
 
@@ -250,7 +250,7 @@ def main():
                 frame_duration_miliseconds=frame_duration,
                 min_val=ste_min_val,
                 max_val=ste_max_val,
-                fig_layout_kwargs=dict(width=400, height=300)
+                fig_layout_kwargs=dict(width=500, height=300)
             ) 
             st.plotly_chart(plot_volume)
 
@@ -277,7 +277,7 @@ def main():
                 frame_duration_miliseconds=frame_duration,
                 min_val=zcr_min_val,
                 max_val=zcr_max_val,
-                fig_layout_kwargs=dict(width=400, height=300)
+                fig_layout_kwargs=dict(width=500, height=300)
             ) 
             st.plotly_chart(plot_zcr)
 

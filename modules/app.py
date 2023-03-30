@@ -35,7 +35,7 @@ class App:
         "ticks": "outside",
     }
     _DEFAULT_PARAMS = {
-        "width": 800,
+        "width": 900,
         "height": 400,
         "margin": dict(l=0, r=0, t=50, b=0),
         "hovermode": False,
