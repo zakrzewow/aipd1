@@ -3,7 +3,7 @@ import numpy as np
 import pandas as pd
 import plotly.express as px
 import plotly.graph_objs as go
-from typing import Callable, List
+from typing import Callable, List, Tuple
 from pydub import AudioSegment
 from typing import List, Tuple, Callable
 from pydub.utils import make_chunks
@@ -265,7 +265,7 @@ class App:
             normalized_energy /= normalized_energy.sum()
             energy_values.append(normalized_energy)
 
-        energy_values_array = np.array(energy_values)[0]
+        energy_values_array = energy_values[0]
         energy_entropy = -np.sum(energy_values_array * np.log2(energy_values_array + np.finfo(float).eps))
         return energy_entropy
     
@@ -486,17 +486,22 @@ class App:
             self.SR(frame, vol_min_value, vol_max_value, zcr_min_value, zcr_max_value) 
                 for frame in self.frame_generator(frame_duration_miliseconds)]
         idx = 0
+        rect_start_idx = None
         for frame, sr in zip(frames, sr_list):
-            if sr:
+            if rect_start_idx is None and sr:
+                rect_start_idx = idx
+            if rect_start_idx is not None and not sr:
                 fig.add_shape(
                     type="rect", 
-                    x0=idx,
+                    x0=rect_start_idx,
                     x1=idx + len(frame.samples),
                     y0=-1,
                     y1=1,
                     fillcolor="#e63946", 
                     opacity=0.2,
+                    line_width=0
                 )
+                rect_start_idx = None
             idx += len(frame.samples)
 
         return fig
@@ -525,12 +530,21 @@ class App:
 
         # Color regions between min_val and max_val
         if min_val is not None and max_val is not None:
+            rect_start_idx = None
             for i in range(len(y)-1):
-                if min_val <= y[i] <= max_val or min_val <= y[i+1] <= max_val:
+                if rect_start_idx is None and min_val <= y[i] <= max_val:
+                    rect_start_idx = i
+                if rect_start_idx is not None and not (min_val <= y[i] <= max_val):
                     fig.add_shape(
-                        type="rect", x0=x[i], y0=min_val, x1=x[i+1], y1=max_val,
-                        fillcolor="#e63946", opacity=0.2
+                        type="rect", x0=x[rect_start_idx], y0=min_val, x1=x[i], y1=max_val,
+                        fillcolor="#e63946", opacity=0.2, line_width=0
                     )
+                    rect_start_idx = None
+            if rect_start_idx is not None:
+                fig.add_shape(
+                    type="rect", x0=x[rect_start_idx], y0=min_val, x1=x[-1], y1=max_val,
+                    fillcolor="#e63946", opacity=0.2, line_width=0
+                )
 
         fig.update_layout(
             xaxis=self._XAXIS_PARAMS,
