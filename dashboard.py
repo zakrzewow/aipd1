@@ -22,7 +22,9 @@ def main():
     directory = f"./samples/{user}/Znormalizowane/"
     file_list = os.listdir(directory)
     st.sidebar.subheader("Wybierz plik")
-    file_name = st.sidebar.selectbox("file_selectbox", file_list, label_visibility="collapsed", disabled=uploaded_file is not None)
+    file_name = st.sidebar.selectbox("file_selectbox", file_list,
+                                    label_visibility="collapsed",
+                                    disabled=uploaded_file is not None)
 
     if uploaded_file is None:
         file_path = os.path.join(directory, file_name)
@@ -125,12 +127,7 @@ def main():
         ) 
         st.plotly_chart(plot_rms)
 
-        #Spectral contrast std
-        spectral_contrast_std_values = app.spectral_contrast_std(app.frames)
 
-        # Plot the standard deviation of spectral contrast values
-        plot_spectral_contrast_std = app.plot_spectral_contrast_std(spectral_contrast_std_values)
-        st.plotly_chart(plot_spectral_contrast_std)
         
         ## Download data
         st.subheader("Zapis parametrów")
@@ -289,6 +286,34 @@ def main():
         st.plotly_chart(plot_sample_with_sr)
 
 
+
+    if selected_tab == "Określanie fragmentów muzyka vs. \n mowa":
+        st.header("Określanie fragmentów muzyka vs. mowa")
+
+        st.write("Ramka jest uznawana za muzykę \
+                  jeśli wartości LSTER oraz ZSRD znajdują się w żądanych przedziałach")
+
+
+        lster_list = app.proper_LSTER()
+
+        if len(lster_list) == 1:
+            st.write("Audio jest zbyt krótkie by analizować pod tym kątem")
+        else:
+            fig = app.plot_proper_music_metric(lster_list, "LSTER")
+            st.plotly_chart(fig)
+            
+            col_vol_min, col_vol_max = st.columns(2)
+            lster_threshord = col_vol_min.number_input("LSTER wartość graniczna", 0.0, 2.0, 0.02, 0.005)
+            
+            fig = app.plot_music_vs_talks(lster_list,
+                                        lster_threshord,
+                                        "Muzyka vs. mowa")
+            st.plotly_chart(fig)
+
+
+
+        
+
     if selected_tab == "Analiza na poziomie klipu":
         st.header("Analiza na poziomie klipu")
 
@@ -324,6 +349,15 @@ def main():
 
         # Display table in Streamlit
         st.write(df_column)
+
+
+        # Plot the standard deviation of spectral contrast values
+        spectral_contrast_std_values = app.spectral_contrast_std(app.frames)
+        if len(spectral_contrast_std_values) == 0:
+            st.write("Audio jest na za którkie na analizę Spectral Contrast Std")
+        else:
+            plot_spectral_contrast_std = app.plot_spectral_contrast_std(spectral_contrast_std_values)
+            st.plotly_chart(plot_spectral_contrast_std)
 
         # Plot spectrogram
         st.subheader("Spectrogram")
