@@ -7,6 +7,8 @@ from typing import Callable, List, Tuple
 from pydub import AudioSegment
 from typing import List, Tuple, Callable
 from pydub.utils import make_chunks
+import math
+
 
 
 class Frame:
@@ -154,32 +156,7 @@ class App:
         return autocorr, sample_rate
     
 
-    @staticmethod
-    def LSTER(frames: List[Frame], window_duration: float = 1) -> float:
-        """
-        Function to calculate the Low Short Time Energy Ratio (LSTER).
-
-        Parameters:
-        frames (List[Frame]): A list of Frame objects.
-        window_duration (float): The duration of the window to compute the average STE. Default is 1.0 second.
-
-        Returns:
-        float: The Low Short Time Energy Ratio (LSTER).
-        """
-        total_frames = len(frames)
-        frame_duration = frames[0].duration
-        window_size = int(window_duration / frame_duration)
-
-        ste_values = [App.STE(frame) for frame in frames]
-        low_ste_count = 0
-
-        for i in range(total_frames - window_size):
-            window_ste_avg = np.mean(ste_values[i:i+window_size])
-            if ste_values[i] < 0.5 * window_ste_avg:
-                low_ste_count += 1
-
-        lster = low_ste_count / total_frames
-        return lster
+git a
     
 
     def chunk_frame_generator(self, chunk: AudioSegment, frame_duration_miliseconds=10):
@@ -239,9 +216,9 @@ class App:
     
 
     @staticmethod
-    def energy_entropy(frames: List[Frame], K: int = 10) -> float:
+    def energy_entropy(frames, K=10):
         """
-        Function to calculate the energy entropy of a list of frames.
+        Calculates the energy entropy of a list of audio frames.
 
         Parameters:
         frames (List[Frame]): A list of Frame objects.
@@ -250,23 +227,25 @@ class App:
         Returns:
         float: The energy entropy of the given frames.
         """
+
         energy_values = []
 
         for frame in frames:
             total_samples = len(frame.samples)
             num_segments = total_samples // K
-            normalized_energy = np.zeros(num_segments)
+            segment_energies = []
 
             for i in range(num_segments):
                 segment = frame.samples[i * K:(i + 1) * K]
-                segment_energy = np.power(segment, 2).sum()
-                normalized_energy[i] = segment_energy
+                segment_energy = sum(x*x for x in segment)
+                segment_energies.append(segment_energy)
 
-            normalized_energy /= normalized_energy.sum()
-            energy_values.append(normalized_energy)
+            total_energy = sum(segment_energies)
+            segment_probs = [x/total_energy for x in segment_energies]
+            segment_entropy = -sum(p*math.log2(p) for p in segment_probs)
+            energy_values.append(segment_entropy)
 
-        energy_values_array = energy_values[0]
-        energy_entropy = -np.sum(energy_values_array * np.log2(energy_values_array + np.finfo(float).eps))
+        energy_entropy = sum(energy_values) / len(energy_values)
         return energy_entropy
     
     @staticmethod
