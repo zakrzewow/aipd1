@@ -156,7 +156,32 @@ class App:
         return autocorr, sample_rate
     
 
-git a
+    @staticmethod
+    def LSTER(frames: List[Frame], window_duration: float = 1) -> float:
+        """
+        Function to calculate the Low Short Time Energy Ratio (LSTER).
+
+        Parameters:
+        frames (List[Frame]): A list of Frame objects.
+        window_duration (float): The duration of the window to compute the average STE. Default is 1.0 second.
+
+        Returns:
+        float: The Low Short Time Energy Ratio (LSTER).
+        """
+        total_frames = len(frames)
+        frame_duration = frames[0].duration
+        window_size = int(window_duration / frame_duration)
+
+        ste_values = [App.STE(frame) for frame in frames]
+        low_ste_count = 0
+
+        for i in range(total_frames - window_size):
+            window_ste_avg = np.mean(ste_values[i:i+window_size])
+            if ste_values[i] < 0.5 * window_ste_avg:
+                low_ste_count += 1
+
+        lster = low_ste_count / total_frames
+        return lster
     
 
     def chunk_frame_generator(self, chunk: AudioSegment, frame_duration_miliseconds=10):
