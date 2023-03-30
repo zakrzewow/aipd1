@@ -156,9 +156,6 @@ class App:
         return autocorr, sample_rate
     
 
-git a
-    
-
     def chunk_frame_generator(self, chunk: AudioSegment, frame_duration_miliseconds=10):
         frame_rate = chunk.frame_rate
         samples = np.asarray(chunk.get_array_of_samples(), dtype=float)
@@ -176,7 +173,6 @@ git a
         chunk_length_ms = 1000
         chunks = make_chunks(self.audio_segment, chunk_length_ms)
         
-        total_duration_ms = len(self.audio_segment)
         frame_duration_miliseconds = 25
 
         lster_list = []
