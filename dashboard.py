@@ -1,7 +1,8 @@
 import os
 import streamlit as st
 import pandas as pd
-from modules.app import App
+from modules.timeApp import TimeApp
+from modules.frequencyApp import FrequencyApp
 
 
 def main():
@@ -28,9 +29,9 @@ def main():
 
     if uploaded_file is None:
         file_path = os.path.join(directory, file_name)
-        app = App(file_path)
+        app = TimeApp(file_path)
     else:
-        app = App(uploaded_file)
+        app = TimeApp(uploaded_file)
 
     # audio
     st.sidebar.audio(app.samples, sample_rate=app.frame_rate)
@@ -44,6 +45,10 @@ def main():
         "Określanie fragmentów muzyka vs. \n mowa",
         "Analiza na poziomie klipu", 
         "Pobieranie markerów określających granice", 
+        "Parametry dźwieku z dziedziny częstotliwości",
+        "Wykresy sygnału w dziedzinie czasu i częstotliwości",
+        "Spektogram",
+        "Częstotliwość kratniowa",
         "Informacje"
     ]
     selected_tab = st.sidebar.radio("tab_radio", tabs, label_visibility="collapsed")
@@ -311,68 +316,65 @@ def main():
             st.plotly_chart(fig)
 
 
-
-        
-
     if selected_tab == "Analiza na poziomie klipu":
         st.header("Analiza na poziomie klipu")
 
-        vstd = app.VSTD(app.frames)
-        vdr = app.VDR(app.frames)
-        vu = app.VU(app.frames)
-        lster = app.LSTER(app.frames)
-        energy_entropy =  app.energy_entropy(app.frames)
-        hzcrr = app.HZCRR(app.frames)
-        spectral_centroid  = app.spectral_centroid_std(app.frames)
-        spectral_bandwidth  = app.spectral_bandwidth_std(app.frames)
+        # vstd = app.VSTD(app.frames)
+        # vdr = app.VDR(app.frames)
+        # vu = app.VU(app.frames)
+        # lster = app.LSTER(app.frames)
+        # energy_entropy =  app.energy_entropy(app.frames)
+        # hzcrr = app.HZCRR(app.frames)
+        # spectral_centroid  = app.spectral_centroid_std(app.frames)
+        # spectral_bandwidth  = app.spectral_bandwidth_std(app.frames)
 
-        data = {'Values': [vstd, vdr, vu, 
-                           lster, energy_entropy, hzcrr,
-                           spectral_centroid, spectral_bandwidth]}
+        # data = {'Values': [vstd, vdr, vu, 
+        #                    lster, energy_entropy, hzcrr,
+        #                    spectral_centroid, spectral_bandwidth]}
 
-        # Create DataFrame
-        df = pd.DataFrame(data, index=['VSTD',
-                                       'VDR',
-                                       'VU',
-                                       'LSTER',
-                                       'ENERGY ENTROPY',
-                                       'HZCRR',
-                                       'SPECTRAL CENTROID',
-                                       'SPECTRAL BANDWIDTH', 
-        ])
+        # # Create DataFrame
+        # df = pd.DataFrame(data, index=['VSTD',
+        #                                'VDR',
+        #                                'VU',
+        #                                'LSTER',
+        #                                'ENERGY ENTROPY',
+        #                                'HZCRR',
+        #                                'SPECTRAL CENTROID',
+        #                                'SPECTRAL BANDWIDTH', 
+        # ])
 
-        # Select only one column
-        df_column = df[['Values']]
+        # # Select only one column
+        # df_column = df[['Values']]
 
-        # Rename index
-        df_column.index.name = 'Metrics'
+        # # Rename index
+        # df_column.index.name = 'Metrics'
 
-        # Display table in Streamlit
-        st.write(df_column)
+        # # Display table in Streamlit
+        # st.write(df_column)
 
 
-        # Plot the standard deviation of spectral contrast values
-        spectral_contrast_std_values = app.spectral_contrast_std(app.frames)
-        if len(spectral_contrast_std_values) == 0:
-            st.write("Audio jest na za którkie na analizę Spectral Contrast Std")
-        else:
-            plot_spectral_contrast_std = app.plot_spectral_contrast_std(spectral_contrast_std_values)
-            st.plotly_chart(plot_spectral_contrast_std)
+        # # Plot the standard deviation of spectral contrast values
+        # spectral_contrast_std_values = app.spectral_contrast_std(app.frames)
+        # if len(spectral_contrast_std_values) == 0:
+        #     st.write("Audio jest na za którkie na analizę Spectral Contrast Std")
+        # else:
+        #     plot_spectral_contrast_std = app.plot_spectral_contrast_std(spectral_contrast_std_values)
+        #     st.plotly_chart(plot_spectral_contrast_std)
 
-        # Plot spectrogram
-        st.subheader("Spectrogram")
-        spectrogram = app.plot_spectrogram()
-        st.plotly_chart(spectrogram)
+        # # Plot spectrogram
+        # st.subheader("Spectrogram")
+        # spectrogram = app.plot_spectrogram()
+        # st.plotly_chart(spectrogram)
 
-        ## Download data
-        st.subheader("Zapis parametrów")
-        clip_level_data = app.get_clip_level_export_data()        
-        st.download_button(
-            label="Pobierz parametry (.csv)",
-            data=clip_level_data.to_csv(),
-            file_name=f"{file_name.split('.')[0]}_frame_10.csv",
-            mime="text/csv",
-        )
+        # ## Download data
+        # st.subheader("Zapis parametrów")
+        # clip_level_data = app.get_clip_level_export_data()        
+        # st.download_button(
+        #     label="Pobierz parametry (.csv)",
+        #     data=clip_level_data.to_csv(),
+        #     file_name=f"{file_name.split('.')[0]}_frame_10.csv",
+        #     mime="text/csv",
+        # )
 
 
     if selected_tab == "Pobieranie markerów określających granice":
@@ -405,6 +407,85 @@ def main():
             file_name=f"table.csv",
             mime="text/csv",
         )
+
+    if uploaded_file is None:
+        file_path = os.path.join(directory, file_name)
+        frequencyApp = FrequencyApp(file_path)
+    else:
+        frequencyApp = FrequencyApp(uploaded_file)
+
+    if selected_tab == "Parametry dźwieku z dziedziny częstotliwości":
+        st.header("Parametry dźwieku z dziedziny częstotliwości")
+        
+        frame_duration_frec = st.slider(key = "slider_frec",
+                                    label = "Długość ramki (w milisekundach):", 
+                                    min_value=10, 
+                                    max_value=40, 
+                                    value=25, 
+                                    step=5)
+        
+        # volume
+        plot_volume_frec = frequencyApp.plot_frame_level_feature(
+            frame_level_func=frequencyApp.volume, 
+            plot_title="VOLUME", 
+            frame_duration_miliseconds=frame_duration_frec,
+        ) 
+        st.plotly_chart(plot_volume_frec)
+
+    if selected_tab == "Wykresy sygnału w dziedzinie czasu i częstotliwości":
+        st.header("Wykresy sygnału w dziedzinie czasu i częstotliwości")
+
+        available_window_names = ["okno prostokątne", "okno trójkątne", "boxcar", "hann", "hamming", "blackman", "bartlett"]
+        selected_window_name = st.radio(
+            label="Wybierz funkcję okienkową:",
+            options=available_window_names,
+            index=0,  # Default selected option
+        )
+
+
+        time_domain_spectrum_plot = frequencyApp.plot_time_domain_spectrum_windows(window_name=selected_window_name)
+        st.plotly_chart(time_domain_spectrum_plot)
+
+        spectrum_plot = frequencyApp.plot_spectrum_windows(window_name = selected_window_name)
+        st.plotly_chart(spectrum_plot)
+
+    if selected_tab == "Spektogram":
+        st.header("Spektogram")
+        # Create a window type selector
+        window_options =  ["okno prostokątne", "okno trójkątne", "boxcar", "hann", "hamming", "blackman", "bartlett"]
+        selected_window = st.selectbox("Wybierz funkcję okienkową", window_options)
+        print(window_options)
+
+        # Create sliders for NFFT and noverlap
+        NFFT = st.slider("Długość ramki", 128, 4096, 1024, step=128)
+        noverlap = st.slider("Długość nakładania ramek", 0, NFFT - 128, NFFT // 2, step=128)
+
+        # Call the create_spectrogram and plot_spectrogram methods
+        frequencyApp.create_spectrogram(NFFT, selected_window, noverlap)
+        spectrogram_plot = frequencyApp.plot_spectrogram(NFFT, selected_window, noverlap)
+
+        # Display the spectrogram
+        st.plotly_chart(spectrogram_plot)
+
+
+    if selected_tab == "Częstotliwość kratniowa":
+        st.header("Częstotliwośc krtaniowa")
+        st.subheader("Cepstrum")
+        cepstrum_signal_plot = frequencyApp.visualize_cepstrum_signal()
+        st.plotly_chart(cepstrum_signal_plot)
+        st.subheader("Czestotliwość kratniowa (F0)")
+        window_size = st.slider("Rozmiar okna", min_value=256, max_value=2**13, value=256, step=128)
+        step_size = st.slider("Długośc nakładania ramek", min_value=256, max_value=2**13, value=256, step=128)
+        
+        window_options = ["okno prostokątne", "okno trójkątne", "boxcar", "hann", "hamming", "blackman", "bartlett"]
+        selected_window_function = st.selectbox("Wybierz funkcję okienkową", window_options)
+
+        # Use the selected window function when calling visualize_laryngeal_frequency
+        f0_signal_plot = frequencyApp.visualize_laryngeal_frequency(window_size, step_size, selected_window_function)
+        st.plotly_chart(f0_signal_plot)
+        
+        st.subheader("Cześctotliość tonu podstawowego dla całego klipu wynosi:")
+        st.markdown(f"**{frequencyApp.laryngeal_frequency(window_function = selected_window_function)[1][0]}Hz**")
 
     if selected_tab == "Informacje":
         st.write("Ta aplikacja umożliwia wybór pliku *.wav (z przykładów lub wgranie własnego), przegląd metryk oraz przeprowadzenie analizy.")
