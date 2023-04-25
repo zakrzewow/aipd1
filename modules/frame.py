@@ -3,3 +3,4 @@ class Frame:
         self.samples = samples
         self.timestamp = timestamp
         self.duration = duration
+        

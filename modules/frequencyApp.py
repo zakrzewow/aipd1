@@ -1,6 +1,5 @@
 import numpy as np
 import plotly.graph_objs as go
-from pydub import AudioSegment
 from modules.frame import Frame
 from typing import Callable
 from scipy.signal import get_window

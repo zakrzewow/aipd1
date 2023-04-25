@@ -49,6 +49,7 @@ def main():
         "Wykresy sygnału w dziedzinie czasu i częstotliwości",
         "Spektogram",
         "Częstotliwość kratniowa",
+        "Rozpoznawanie mowy",
         "Informacje"
     ]
     selected_tab = st.sidebar.radio("tab_radio", tabs, label_visibility="collapsed")
@@ -486,6 +487,11 @@ def main():
 
         st.subheader("Cześctotliość tonu podstawowego dla całego klipu wynosi:")
         st.markdown(f"**{frequencyApp.laryngeal_frequency(window_function = selected_window_function)[1][0]}Hz**")
+
+
+    if selected_tab ==  "Rozpoznawanie mowy":
+        st.header("Rozpoznawanie mowy")
+        
 
     if selected_tab == "Informacje":
         st.write("Ta aplikacja umożliwia wybór pliku *.wav (z przykładów lub wgranie własnego), przegląd metryk oraz przeprowadzenie analizy.")
