@@ -5,10 +5,11 @@ from modules.frame import Frame
 from typing import Callable
 from scipy.signal import get_window
 from modules.app import App
+from modules.window import Window
+
 
 class FrequencyApp(App):
-    # stylowanie wykresów
-
+    
     def read_wav(self, filepath_or_bytes, normalize=True):
         super().read_wav(filepath_or_bytes, normalize=normalize)
         self.samples = self.to_next_2n(self.samples)
@@ -34,13 +35,6 @@ class FrequencyApp(App):
         new_samples = np.append(samples, np.asarray([0]*m))
         return new_samples
 
-    @staticmethod
-    def rectangular_window(M):
-        return np.ones(M)
-
-    @staticmethod
-    def triangular_window(M):
-        return np.bartlett(M)
 
     @staticmethod
     def volume(frame: Frame):
@@ -51,10 +45,7 @@ class FrequencyApp(App):
     
     @staticmethod
     def window_rfft(samples, window_function):
-        if callable(window_function):
-            window = window_function(len(samples))
-        else:
-            window = get_window(window_function, len(samples))
+        window = Window.get_window(window_function, len(samples))
         windowed_signal = samples * window
         rfft_output = np.fft.rfft(windowed_signal)
         return rfft_output
@@ -85,20 +76,10 @@ class FrequencyApp(App):
         num_windows = (len(self.samples) - window_size) // step_size + 1
         windows = [self.samples[i * step_size:i * step_size + window_size] for i in range(num_windows)]
 
-        window_function_map = {
-            "okno prostokątne": self.rectangular_window,
-            "okno trójkątne": self.triangular_window,
-            "boxcar": "boxcar",
-            "hann": "hann",
-            "hamming": "hamming",
-            "blackman": "blackman",
-            "bartlett": "bartlett",
-        }
-        window_func = window_function_map[window_function]
 
         ste = []
         for w in windows:
-            windowed_signal = w * window_func(len(w))
+            windowed_signal = w * Window.get_window(window_function, len(w))
             energy = np.sum(windowed_signal**2)
             ste.append(energy)
         return ste
@@ -153,19 +134,8 @@ class FrequencyApp(App):
         return fig
 
     def plot_spectrum_windows(self, window_name: str ):
-        window_function_map = {
-            "okno prostokątne": self.rectangular_window,
-            "okno trójkątne": self.triangular_window,
-            "boxcar": "boxcar",
-            "hann": "hann",
-            "hamming": "hamming",
-            "blackman": "blackman",
-            "bartlett": "bartlett",
-        }
-
         f = np.fft.rfftfreq(len(self.samples), 1/self.frame_rate)
-        window_function = window_function_map[window_name]
-        spectrum_complex = self.window_rfft(self.samples, window_function)
+        spectrum_complex = self.window_rfft(self.samples, window_name)
         spectrum = 20 * np.log10(np.abs(spectrum_complex))
 
         fig = go.Figure()
@@ -181,19 +151,8 @@ class FrequencyApp(App):
     
 
     def plot_time_domain_spectrum_windows(self, window_name: str):
-        window_function_map = {
-            "okno prostokątne": self.rectangular_window,
-            "okno trójkątne": self.triangular_window,
-            "boxcar": "boxcar",
-            "hann": "hann",
-            "hamming": "hamming",
-            "blackman": "blackman",
-            "bartlett": "bartlett",
-        }
 
-        # Same as before
-        window_function = window_function_map[window_name]
-        spectrum_complex = self.window_rfft(self.samples, window_function)
+        spectrum_complex = self.window_rfft(self.samples, window_name)
         
         # Apply the inverse Fourier transform to the complex spectrum
         time_domain_signal = np.fft.irfft(spectrum_complex)
@@ -221,25 +180,11 @@ class FrequencyApp(App):
         starts = np.arange(0, len(ts), NFFT - noverlap, dtype=int)
         starts = starts[starts + NFFT < len(ts)]
         
-        window_function_map = {
-            "okno prostokątne": self.rectangular_window,
-            "okno trójkątne": self.triangular_window,
-            "boxcar": "boxcar",
-            "hann": "hann",
-            "hamming": "hamming",
-            "blackman": "blackman",
-            "bartlett": "bartlett",
-        }
-        
-        window_function = window_function_map[window_name]
         xns = []
         
         for start in starts:
             ts_segment = ts[start:start + NFFT]
-            if callable(window_function):
-                window = window_function( len(ts_segment))
-            else:
-                window = get_window(window_function, len(ts_segment))
+            window = Window.get_window(window_name, len(ts_segment))
             windowed_ts = ts_segment * window
             ts_window = np.fft.rfft(windowed_ts)
             xns.append(ts_window)
