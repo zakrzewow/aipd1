@@ -2,10 +2,10 @@ import os
 import streamlit as st
 from modules.timeApp import TimeApp
 from modules.frequencyApp import FrequencyApp
-from typing import Tuple
+from typing import Tuple, Dict
 
 
-def run() -> Tuple[str, str, TimeApp, FrequencyApp]:
+def run(TABS: Dict) -> Tuple[str, str, TimeApp, FrequencyApp]:
     st.sidebar.subheader("Wgraj własny plik .wav")
     uploaded_file = st.sidebar.file_uploader(
         "file_selectbox", "wav", label_visibility="collapsed"
@@ -43,20 +43,9 @@ def run() -> Tuple[str, str, TimeApp, FrequencyApp]:
     st.sidebar.audio(app.samples, sample_rate=app.frame_rate)
 
     # tabs
-    tabs = [
-        "Przebieg czasowy pliku audio",
-        "Cechy na poziomie ramki",
-        "Detekcja ciszy",
-        "Określanie fragmentów dźwięcznych i \n bezdźwięcznych",
-        "Określanie fragmentów muzyka vs. \n mowa",
-        "Analiza na poziomie klipu",
-        "Pobieranie markerów określających granice",
-        "Parametry dźwieku z dziedziny częstotliwości",
-        "Wykresy sygnału w dziedzinie czasu i częstotliwości",
-        "Spektogram",
-        "Częstotliwość kratniowa",
-        "Informacje",
-    ]
+
+    # "Wykresy sygnału w dziedzinie czasu i częstotliwości",
+    tabs = [*TABS.keys(), "Informacje"]
     selected_tab = st.sidebar.radio("tab_radio", tabs, label_visibility="collapsed")
 
     return selected_tab, file_name, app, frequencyApp
