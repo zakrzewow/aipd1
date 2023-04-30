@@ -18,33 +18,54 @@ def run(selected_tab: str, file_name: str, app: TimeApp, frequencyApp: Frequency
 
     # volume
     plot_volume_frec = frequencyApp.plot_frame_level_feature(
-        frame_level_func=frequencyApp.volume,
+        frame_level_func=frequencyApp.Volume,
         plot_title="VOLUME",
         frame_duration_miliseconds=frame_duration_frec,
     )
     st.plotly_chart(plot_volume_frec)
 
-    st.header("Wykresy sygnału w dziedzinie czasu i częstotliwości")
-
-    available_window_names = [
-        "okno prostokątne",
-        "okno trójkątne",
-        "boxcar",
-        "hann",
-        "hamming",
-        "blackman",
-        "bartlett",
-    ]
-    selected_window_name = st.radio(
-        label="Wybierz funkcję okienkową:",
-        options=available_window_names,
-        index=0,  # Default selected option
+    # frequency centroid
+    plot_FC = frequencyApp.plot_frame_level_feature(
+        frame_level_func=frequencyApp.FrequencyCentroid,
+        plot_title="Frequency Centroid",
+        frame_duration_miliseconds=frame_duration_frec,
     )
+    st.plotly_chart(plot_FC)
 
-    time_domain_spectrum_plot = frequencyApp.plot_time_domain_spectrum_windows(
-        window_name=selected_window_name
+    # band energy & band energy ratio
+    frequency_bands = [(0, 630), (630, 1720), (1720, 4400)]
+    frequency_bands_names = ["0 - 630 Hz", "630 - 1720 Hz", "1720 - 4400 Hz"]
+    bands_tabs = st.tabs(frequency_bands_names)
+
+    for frequency_band, band_tab in zip(frequency_bands, bands_tabs):
+        plot_BE = frequencyApp.plot_frame_level_feature(
+            frame_level_func=frequencyApp.BandEnergy,
+            plot_title=f"Band Energy {frequency_band[0]} - {frequency_band[1]} Hz",
+            frame_duration_miliseconds=frame_duration_frec,
+            frame_level_func_kwargs=dict(frequency_band=frequency_band),
+        )
+        band_tab.plotly_chart(plot_BE)
+
+        plot_ERSB = frequencyApp.plot_frame_level_feature(
+            frame_level_func=frequencyApp.BandEnergyRatio,
+            plot_title=f"Band Energy Ratio {frequency_band[0]} - {frequency_band[1]} Hz",
+            frame_duration_miliseconds=frame_duration_frec,
+            frame_level_func_kwargs=dict(frequency_band=frequency_band),
+        )
+        band_tab.plotly_chart(plot_ERSB)
+
+    # spectral flatness
+    plot_SFM = frequencyApp.plot_frame_level_feature(
+        frame_level_func=frequencyApp.SpectralFlatnessMeasure,
+        plot_title="Spectral Flatness Measure",
+        frame_duration_miliseconds=frame_duration_frec,
     )
-    st.plotly_chart(time_domain_spectrum_plot)
+    st.plotly_chart(plot_SFM)
 
-    spectrum_plot = frequencyApp.plot_spectrum_windows(window_name=selected_window_name)
-    st.plotly_chart(spectrum_plot)
+    # spectral flatness
+    plot_SCF = frequencyApp.plot_frame_level_feature(
+        frame_level_func=frequencyApp.SpectralCrestFactor,
+        plot_title="Spectral Crest Factor",
+        frame_duration_miliseconds=frame_duration_frec,
+    )
+    st.plotly_chart(plot_SCF)

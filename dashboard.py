@@ -10,6 +10,7 @@ import tabs.project_1.cechy_poziom_klipu
 import tabs.project_1.pobieranie_markerow
 
 import tabs.project_2.frequency_features
+import tabs.project_2.time_frequency_domain_plots
 import tabs.project_2.spectrogram
 import tabs.project_2.laryngeal_frequency
 
@@ -22,6 +23,7 @@ def main():
     TABS = {
         "Przebieg czasowy pliku audio": tabs.project_1.przebieg_czasowy,
         "[II] Parametry dźwieku z dziedziny częstotliwości": tabs.project_2.frequency_features,
+        "[II] Wykresy sygnału w dziedzinie czasu i częstotliwości": tabs.project_2.time_frequency_domain_plots,
         "[II] Spektogram": tabs.project_2.spectrogram,
         "[II] Częstotliwość kratniowa": tabs.project_2.laryngeal_frequency,
         "[I] Cechy na poziomie ramki": tabs.project_1.cechy_poziom_ramki,
