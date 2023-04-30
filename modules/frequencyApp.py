@@ -183,9 +183,12 @@ class FrequencyApp(App):
         )
         return fig
 
-    def plot_spectrum_windows(self, window_name: str):
-        f = np.fft.rfftfreq(len(self.samples), 1 / self.frame_rate)
-        spectrum_complex = self.window_rfft(self.samples, window_name)
+    def plot_spectrum_windows(
+        self, window_name: str, sample_start: int, sample_end: int
+    ):
+        samples = self.samples[sample_start:sample_end]
+        f = np.fft.rfftfreq(len(samples), 1 / self.frame_rate)
+        spectrum_complex = self.window_rfft(samples, window_name)
         spectrum = 20 * np.log10(np.abs(spectrum_complex))
 
         fig = go.Figure()
@@ -201,9 +204,12 @@ class FrequencyApp(App):
         )
         return fig
 
-    def plot_time_domain_spectrum_windows(self, window_name: str):
-
-        spectrum_complex = self.window_rfft(self.samples, window_name)
+    def plot_time_domain_spectrum_windows(
+        self, window_name: str, sample_start: int, sample_end: int
+    ):
+        spectrum_complex = self.window_rfft(
+            self.samples[sample_start:sample_end], window_name
+        )
 
         # Apply the inverse Fourier transform to the complex spectrum
         time_domain_signal = np.fft.irfft(spectrum_complex)
