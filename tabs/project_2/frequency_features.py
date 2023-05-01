@@ -32,6 +32,14 @@ def run(selected_tab: str, file_name: str, app: TimeApp, frequencyApp: Frequency
     )
     st.plotly_chart(plot_FC)
 
+    # effective bandwidth
+    plot_BW = frequencyApp.plot_frame_level_feature(
+        frame_level_func=frequencyApp.EffectiveBandwidth,
+        plot_title="Effective Bandwidth",
+        frame_duration_miliseconds=frame_duration_frec,
+    )
+    st.plotly_chart(plot_BW)
+
     # band energy & band energy ratio
     frequency_bands = [(0, 630), (630, 1720), (1720, 4400)]
     frequency_bands_names = ["0 - 630 Hz", "630 - 1720 Hz", "1720 - 4400 Hz"]

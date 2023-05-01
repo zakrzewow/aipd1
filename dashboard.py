@@ -22,16 +22,16 @@ def main():
     ## tabs
     TABS = {
         "Przebieg czasowy pliku audio": tabs.project_1.przebieg_czasowy,
-        "[II] Parametry dźwieku z dziedziny częstotliwości": tabs.project_2.frequency_features,
-        "[II] Wykresy sygnału w dziedzinie czasu i częstotliwości": tabs.project_2.time_frequency_domain_plots,
-        "[II] Spektogram": tabs.project_2.spectrogram,
-        "[II] Częstotliwość kratniowa": tabs.project_2.laryngeal_frequency,
-        "[I] Cechy na poziomie ramki": tabs.project_1.cechy_poziom_ramki,
-        "[I] Detekcja ciszy": tabs.project_1.detekcja_ciszy,
-        "[I] Określanie fragmentów dźwięcznych i bezdźwięcznych": tabs.project_1.fragmenty_dzwieczne,
-        "[I] Określanie fragmentów muzyka vs. mowa": tabs.project_1.muzyka_mowa,
-        "[I] Analiza na poziomie klipu": tabs.project_1.cechy_poziom_klipu,
-        "[I] Pobieranie markerów określających granice": tabs.project_1.pobieranie_markerow,
+        "2️⃣ Parametry dźwieku z dziedziny częstotliwości": tabs.project_2.frequency_features,
+        "2️⃣ Wykresy sygnału w dziedzinie czasu i częstotliwości": tabs.project_2.time_frequency_domain_plots,
+        "2️⃣ Spektogram": tabs.project_2.spectrogram,
+        "2️⃣ Częstotliwość kratniowa": tabs.project_2.laryngeal_frequency,
+        "1️⃣ Cechy na poziomie ramki": tabs.project_1.cechy_poziom_ramki,
+        "1️⃣ Detekcja ciszy": tabs.project_1.detekcja_ciszy,
+        "1️⃣ Określanie fragmentów dźwięcznych i bezdźwięcznych": tabs.project_1.fragmenty_dzwieczne,
+        "1️⃣ Określanie fragmentów muzyka vs. mowa": tabs.project_1.muzyka_mowa,
+        "1️⃣ Analiza na poziomie klipu": tabs.project_1.cechy_poziom_klipu,
+        "1️⃣ Pobieranie markerów określających granice": tabs.project_1.pobieranie_markerow,
     }
 
     ## sidebar

@@ -1,9 +1,7 @@
 import numpy as np
 import plotly.graph_objs as go
-from pydub import AudioSegment
 from modules.frame import Frame
 from typing import Callable
-from scipy.signal import get_window
 from modules.app import App
 from modules.window import Window
 
@@ -11,29 +9,6 @@ from modules.window import Window
 class FrequencyApp(App):
     def read_wav(self, filepath_or_bytes, normalize=True):
         super().read_wav(filepath_or_bytes, normalize=normalize)
-        # self.samples = self.to_next_2n(self.samples)
-
-    # @staticmethod
-    # def to_next_2n(samples):
-    #     """
-    #     Adds zeroes in the end of the signal to achieve the length of 2^n, where n
-    #     is a positive integer. Required for FFT.
-
-    #     Parameters
-    #     ----------
-    #     samples : vector of amplitudes (samples / frames[i])
-
-    #     Returns
-    #     ----------
-    #     new_samples : vector of samples of length 2^n with zeroes added
-    #     """
-    #     k = len(samples)
-    #     n = 1
-    #     while k > n:
-    #         n = 2 * n
-    #     m = n - k
-    #     new_samples = np.append(samples, np.asarray([0] * m))
-    #     return new_samples
 
     @staticmethod
     def Volume(frame: Frame):
@@ -47,6 +22,14 @@ class FrequencyApp(App):
         return np.sum(np.abs(spectrum) * np.linspace(0, 1, spectrum.size)) / np.sum(
             np.abs(spectrum)
         )
+
+    @staticmethod
+    def EffectiveBandwidth(frame: Frame):
+        FC = FrequencyApp.FrequencyCentroid(frame)
+        spectrum = np.abs(np.fft.fft(frame.samples))
+        return np.sum(
+            np.square(np.linspace(0, 1, spectrum.size) - FC) * np.square(spectrum)
+        ) / np.sum(np.square(spectrum))
 
     @staticmethod
     def BandEnergy(frame: Frame, frequency_band):
@@ -64,7 +47,7 @@ class FrequencyApp(App):
     @staticmethod
     def SpectralFlatnessMeasure(frame: Frame):
         spectrum = np.square(np.abs(np.fft.fft(frame.samples)))
-        spectral_flatness = (spectrum.prod() ** (1.0 / len(spectrum))) / spectrum.mean()
+        spectral_flatness = np.exp(np.log(spectrum).mean()) / spectrum.mean()
         return spectral_flatness
 
     @staticmethod
@@ -113,7 +96,7 @@ class FrequencyApp(App):
         ste = []
         for w in windows:
             windowed_signal = w * Window.get_window(window_function, len(w))
-            energy = np.sum(windowed_signal ** 2)
+            energy = np.sum(windowed_signal**2)
             ste.append(energy)
         return ste
 
@@ -298,7 +281,6 @@ class FrequencyApp(App):
         frame_level_func_kwargs={},
         fig_layout_kwargs={},
     ):
-
         frames = [frame for frame in self.frame_generator(frame_duration_miliseconds)]
         x = [frame.timestamp for frame in frames]
         y = [frame_level_func(frame, **frame_level_func_kwargs) for frame in frames]
@@ -353,4 +335,3 @@ class FrequencyApp(App):
         )
 
         return fig
-
