@@ -38,7 +38,7 @@ def run(selected_tab: str, file_name: str, app: TimeApp, frequencyApp: Frequency
     )
     st.plotly_chart(f0_signal_plot)
 
-    st.subheader("Cześctotliość tonu podstawowego dla całego klipu wynosi:")
+    st.subheader("Czestotliość tonu podstawowego dla całego klipu wynosi:")
     st.markdown(
         f"**{frequencyApp.laryngeal_frequency(window_function = selected_window_function)[1][0]}Hz**"
     )
