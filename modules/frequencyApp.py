@@ -79,8 +79,11 @@ class FrequencyApp(App):
         lower_tau = int(self.frame_rate / upper_freq)
         upper_tau = int(self.frame_rate / lower_freq)
 
-        max_tau = np.argmax(real_cepstrum[lower_tau:upper_tau]) + lower_tau
-        fundamental_frequency = self.frame_rate / max_tau
+        try:
+            max_tau = np.argmax(real_cepstrum[lower_tau:upper_tau]) + lower_tau
+            fundamental_frequency = self.frame_rate / max_tau
+        except:
+            fundamental_frequency = "Can't calculate"
 
         return fundamental_frequency
 
@@ -140,9 +143,9 @@ class FrequencyApp(App):
             go.Scatter(x=xaxes, y=lf, mode="markers", marker=dict(color="#16733e"))
         )
         fig.update_layout(
-            title="Laryngeal Frequency",
-            xaxis_title="Window Number",
-            yaxis_title="Fundamental Frequency (Hz)",
+            title="Częstotliowść krtaniowa",
+            xaxis_title="Numer okna",
+            yaxis_title="F0(Hz)",
         )
 
         return fig
