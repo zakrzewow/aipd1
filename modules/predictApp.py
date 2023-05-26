@@ -1,69 +1,21 @@
+import os
+
+import librosa
+import matplotlib.pyplot as plt
 import numpy as np
+import pandas as pd
 import plotly.graph_objs as go
 from pydub import AudioSegment
-from modules.window import Window
-from modules.frame import Frame
-import librosa
-import pandas as pd
+from sklearn.metrics import (ConfusionMatrixDisplay, classification_report,
+                             confusion_matrix)
 from tqdm import tqdm
-import os
-import numpy as np
-import librosa
-from scipy import fft
-import numpy as np
-import scipy.signal as signal
-import scipy.fft as fft
+
 
 class PredictApp():
-    # stylowanie wykresów
-    _XAXIS_PARAMS = {
-        "tickmode": "array",
-        "linecolor": "black",
-        "gridcolor": "#c4cfc9",
-        "showline": True,
-        "mirror": True,
-        "ticks": "outside",
-        "title": "Time [s]"
-    }
-    _YAXIS_PARAMS = {
-        "linecolor": "black",
-        "gridcolor": "#c4cfc9",
-        "showline": False,
-        "ticks": "outside",
-    }
-    _DEFAULT_PARAMS = {
-        "width": 900,
-        "height": 400,
-        "margin": dict(l=0, r=0, t=50, b=0),
-        "hovermode": False,
-        "template": "plotly_white",
-        "showlegend": False,
-    }
-
     def __init__(self, filepath_or_bytes, frame_duration_miliseconds: int = 5, normalize=True):
         self.read_wav(filepath_or_bytes, normalize=normalize)
         self.frame_duration_miliseconds = frame_duration_miliseconds
-        self.frames = [frame for frame in self.frame_generator(frame_duration_miliseconds)]
-        self.filepath_or_bytes = filepath_or_bytes
 
-    def read_wav(self, filepath_or_bytes, normalize=True):
-        self.audio_segment = AudioSegment.from_wav(filepath_or_bytes)
-        self.frame_rate = self.audio_segment.frame_rate
-        self.samples = np.asarray(self.audio_segment.get_array_of_samples(), dtype=float)
-        if normalize:
-            self.samples = self.samples / np.abs(self.samples).max()
-
-
-    def frame_generator(self, frame_duration_miliseconds=10):
-        n = int(self.frame_rate * frame_duration_miliseconds / 1000)
-        offset = 0
-        timestamp = 0.0
-        duration = n / self.frame_rate
-        for offset in range(0, len(self.samples), n):
-            yield Frame(self.samples[offset:offset + n], timestamp, duration)
-            timestamp += duration
-            offset += n
-    
     def read_wav(self, filepath_or_bytes, normalize=True):
         self.audio_segment = AudioSegment.from_wav(filepath_or_bytes)
         self.frame_rate = self.audio_segment.frame_rate
@@ -128,7 +80,6 @@ class PredictApp():
         """  
         return 700.0 * (10.0**(mels / 2595.0) - 1.0)
 
-
     @staticmethod
     def get_filter_points(fmin, fmax, mel_filter_num, FFT_size, sample_rate=22050):
         fmin_mel = PredictApp.freq_to_mel(fmin)
@@ -173,9 +124,7 @@ class PredictApp():
             yaxis_title="Amplitude",
             legend=dict(orientation="h", yanchor="bottom", y=1.02, xanchor="right", x=1),
         )
-
         return fig
-
 
     @staticmethod
     def features_extractor(file_name):
@@ -190,12 +139,13 @@ class PredictApp():
         ----------
         mfccs_scaled_features : scaled matrix with cepstral coefficents - the product of perfoming MFCC
         """    
-        #load the file (audio)
+        # load the file (audio)
         audio, sample_rate = librosa.load(file_name, res_type='kaiser_fast') 
-        #we extract mfcc
+        # we extract mfcc
         mfccs_features = librosa.feature.mfcc(y=audio, sr=sample_rate, n_mfcc=40)
-        #in order to find out scaled feature we do mean of transpose of value
+        # in order to find out scaled feature we do mean of transpose of value
         mfccs_scaled_features = np.mean(mfccs_features.T,axis=0)
+        
         return mfccs_scaled_features
 
     @staticmethod
@@ -226,14 +176,41 @@ class PredictApp():
         extracted_features_df = pd.DataFrame(extracted_features, columns=['feature', 'class'])
         return extracted_features_df
 
+    @staticmethod
+    def print_precision_recall_report(clf, X_train, y_train, X_test, y_test, **kwargs):
+        y_train_pred = clf.predict(X_train, **kwargs)
+        y_test_pred = clf.predict(X_test, **kwargs)
 
-    
+        if y_train.ndim == 2:
+            y_train = np.argmax(y_train, axis=1)
+            y_test = np.argmax(y_test, axis=1)
+            y_train_pred = np.argmax(y_train_pred, axis=1)
+            y_test_pred = np.argmax(y_test_pred, axis=1)
 
+        # tabelki precision / recall / f1
+        def print_precision_recall_table(y, y_pred, title='Zbiór ...'):
+            s = pd.DataFrame(classification_report(
+                    y, y_pred,
+                    output_dict=True,
+                    zero_division=0
+                )).iloc[:-1, :-2].to_string(float_format=lambda x: "{:6.3f}".format(x))
+            print(title.center(s.index('\n'), '-'))
+            print(s)
+            print()
 
+        print_precision_recall_table(y_train, y_train_pred, 'Zbiór treningowy')
+        print_precision_recall_table(y_test, y_test_pred, 'Zbiór testowy')
 
-
-
-
-        
-    
-
+        # macierz pomyłek
+        def plot_confusion_matrix(y, y_pred, title, ax):
+            conf_mx = confusion_matrix(y, y_pred)
+            disp = ConfusionMatrixDisplay(confusion_matrix=conf_mx, display_labels=[0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10])
+            disp.plot(colorbar=False, cmap=plt.cm.Blues, ax=ax, values_format='d')
+            ax.grid(False)
+            ax.set_title(title)
+            
+        fig, axs = plt.subplots(1, 2, figsize=(10, 5))
+        plot_confusion_matrix(y_train, y_train_pred, 'Zbiór treningowy', axs[0])
+        plot_confusion_matrix(y_test, y_test_pred, 'Zbiór testowy', axs[1])
+        axs[1].set_ylabel(None)
+        plt.show()
