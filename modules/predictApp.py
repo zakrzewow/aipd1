@@ -209,7 +209,7 @@ class PredictApp():
             ax.grid(False)
             ax.set_title(title)
             
-        fig, axs = plt.subplots(1, 2, figsize=(10, 5))
+        fig, axs = plt.subplots(1, 2, figsize=(12, 6))
         plot_confusion_matrix(y_train, y_train_pred, 'Zbiór treningowy', axs[0])
         plot_confusion_matrix(y_test, y_test_pred, 'Zbiór testowy', axs[1])
         axs[1].set_ylabel(None)
