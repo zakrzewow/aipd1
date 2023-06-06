@@ -7,6 +7,30 @@ from modules.window import Window
 
 
 class FrequencyApp(App):
+    
+    def read_wav(self, filepath_or_bytes, normalize=True):
+        super().read_wav(filepath_or_bytes, normalize=normalize)
+        self.samples = self.to_next_2n(self.samples)
+
+    def to_next_2n(self, samples):
+        """
+        Adds zeroes in the end of the signal to achieve the length of 2^n, where n
+        is a positive integer. Required for FFT.
+        Parameters
+        ----------
+        samples : vector of amplitudes (samples / frames[i])
+        Returns
+        ----------
+        new_samples : vector of samples of length 2^n with zeroes added
+        """  
+        k = len(samples)
+        n = 1
+        while k > n:
+            n = 2*n
+        m = n-k
+        new_samples = np.append(samples, np.asarray([0]*m))
+        return new_samples
+
     def read_wav(self, filepath_or_bytes, normalize=True):
         super().read_wav(filepath_or_bytes, normalize=normalize)
 
@@ -91,6 +115,8 @@ class FrequencyApp(App):
         self, window_size=1024, step_size=512, window_function="hann"
     ):
         num_windows = (len(self.samples) - window_size) // step_size + 1
+        windows = [self.samples[i * step_size:i * step_size + window_size] for i in range(num_windows)]
+
         windows = [
             self.samples[i * step_size : i * step_size + window_size]
             for i in range(num_windows)
@@ -169,6 +195,9 @@ class FrequencyApp(App):
         )
         return fig
 
+    def plot_spectrum_windows(self, window_name: str ):
+        f = np.fft.rfftfreq(len(self.samples), 1/self.frame_rate)
+        spectrum_complex = self.window_rfft(self.samples, window_name)
     def plot_spectrum_windows(
         self, window_name: str, sample_start: int, sample_end: int
     ):
@@ -189,6 +218,12 @@ class FrequencyApp(App):
             **self._DEFAULT_PARAMS,
         )
         return fig
+    
+
+    def plot_time_domain_spectrum_windows(self, window_name: str):
+
+        spectrum_complex = self.window_rfft(self.samples, window_name)
+        
 
     def plot_time_domain_spectrum_windows(
         self, window_name: str, sample_start: int, sample_end: int
@@ -235,7 +270,8 @@ class FrequencyApp(App):
         xns = []
 
         for start in starts:
-            ts_segment = ts[start : start + NFFT]
+            ts_segment = ts[start:start + NFFT]
+
             window = Window.get_window(window_name, len(ts_segment))
             windowed_ts = ts_segment * window
             ts_window = np.fft.rfft(windowed_ts)

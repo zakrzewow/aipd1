@@ -15,6 +15,27 @@ import tabs.project_2.spectrogram
 import tabs.project_2.laryngeal_frequency
 
 
+    # audio
+    st.sidebar.audio(app.samples, sample_rate=app.frame_rate)
+
+    # tabs
+    tabs = [
+        "Przebieg czasowy pliku audio",
+        "Cechy na poziomie ramki",
+        "Detekcja ciszy",
+        "Określanie fragmentów dźwięcznych i \n bezdźwięcznych",
+        "Określanie fragmentów muzyka vs. \n mowa",
+        "Analiza na poziomie klipu", 
+        "Pobieranie markerów określających granice", 
+        "Parametry dźwieku z dziedziny częstotliwości",
+        "Wykresy sygnału w dziedzinie czasu i częstotliwości",
+        "Spektogram",
+        "Częstotliwość kratniowa",
+        "Rozpoznawanie mowy",
+        "Informacje"
+    ]
+    selected_tab = st.sidebar.radio("tab_radio", tabs, label_visibility="collapsed")
+
 def main():
     ## page config
     st.set_page_config(page_title="AiPD projekt 1 & 2", layout="wide")
@@ -40,6 +61,11 @@ def main():
     tab_module = TABS.get(selected_tab, None)
     if tab_module:
         tab_module.run(selected_tab, file_name, app, frequencyApp)
+
+
+    if selected_tab ==  "Rozpoznawanie mowy":
+        st.header("Rozpoznawanie mowy")
+        
 
     if selected_tab == "Informacje":
         st.write(
